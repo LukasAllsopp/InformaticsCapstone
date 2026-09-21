@@ -1,6 +1,6 @@
 Hello
 
-The files maps_config.txt and maps_index.html 
-both relate to the google maps API with config holding the API key
+The files maps_config.txt(under .gitignore) and maps_index.html 
+both relate to the google maps API with maps_config.txt holding the API key.
 these files should function when put into your respective MAMP htdocs folders
 and by searching "localhost" after starting the server.
