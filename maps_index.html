@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Load KML into Google Maps</title>
+
+    <!-- Loads GOOGLE_MAPS_API_KEY from config.js, which is NOT committed to version control -->
+    <script src="maps_config.js"></script>
+
+    <script>
+      // Build the Maps script tag at runtime so the key never sits directly in this file
+      function loadGoogleMaps() {
+        var script = document.createElement('script');
+        script.src = 'https://maps.googleapis.com/maps/api/js?key=' + GOOGLE_MAPS_API_KEY + '&callback=initMap';
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+      }
+
+      function initMap() {
+        var map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 8,
+          center: { lat: 41.876, lng: -87.624 }
+        });
+
+        var kmlLayer = new google.maps.KmlLayer({
+          // uses examples.kml
+          url: 'https://www.veuzz.com/kml/examples.kml',
+          map: map
+        });
+      }
+
+      window.onload = loadGoogleMaps;
+    </script>
+  </head>
+  <body>
+    <div id="map" style="height: 500px; width: 100%;"></div>
+  </body>
+</html>
