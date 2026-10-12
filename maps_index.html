@@ -3,11 +3,14 @@
   <head>
     <title>Load KML into Google Maps</title>
 
-    <!-- Loads GOOGLE_MAPS_API_KEY from config.js, which is NOT committed to version control -->
-    <script src="maps_config.js"></script>
+    <!-- Loads the local API key without committing it to version control -->
+    <script src="config.js"></script>
 
     <script>
       // Build the Maps script tag at runtime so the key never sits directly in this file
+      let map;
+      let selectedMarker;
+
       function loadGoogleMaps() {
         var script = document.createElement('script');
         script.src = 'https://maps.googleapis.com/maps/api/js?key=' + GOOGLE_MAPS_API_KEY + '&callback=initMap';
@@ -17,15 +20,36 @@
       }
 
       function initMap() {
-        var map = new google.maps.Map(document.getElementById('map'), {
+        map = new google.maps.Map(document.getElementById('map'), {
           zoom: 8,
           center: { lat: 41.876, lng: -87.624 }
         });
 
-        var kmlLayer = new google.maps.KmlLayer({
+        new google.maps.KmlLayer({
           // uses examples.kml
           url: 'https://www.veuzz.com/kml/examples.kml',
           map: map
+        });
+
+        map.addListener('click', function (event) {
+          var position = {
+            lat: event.latLng.lat(),
+            lng: event.latLng.lng()
+          };
+
+          if (selectedMarker) {
+            selectedMarker.setPosition(position);
+          } else {
+            selectedMarker = new google.maps.Marker({
+              position: position,
+              map: map,
+              title: 'Selected location'
+            });
+          }
+
+          document.getElementById('latitude').textContent = position.lat.toFixed(6);
+          document.getElementById('longitude').textContent = position.lng.toFixed(6);
+          document.getElementById('coordinates').hidden = false;
         });
       }
 
@@ -33,6 +57,11 @@
     </script>
   </head>
   <body>
+    <p>Click anywhere on the map to place a pointer and see its coordinates.</p>
     <div id="map" style="height: 500px; width: 100%;"></div>
+    <p id="coordinates" hidden>
+      Latitude: <span id="latitude"></span>,
+      Longitude: <span id="longitude"></span>
+    </p>
   </body>
 </html>
