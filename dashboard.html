@@ -83,15 +83,15 @@
         <h1>Weather/Travel App</h1>
       </div>
       <nav class="right" aria-label="Account">
-        <a class="pill" href="login.html">Login</a>
+        <a class="pill" href="userLogin.html">Login</a>
         <a class="pill primary" href="signup.html">Create Account</a>
       </nav>
     </header>
     <main id="map" role="application" aria-label="Map">Loading map…</main>
   </div>
 
+  <script src="config.js"></script>
   <script>
-    // The Maps key comes from the server (/api/config reads it from .env), so it is never stored in this file.
     function initMap() {
       const map = new google.maps.Map(document.getElementById('map'), {
         zoom: 8,
@@ -105,14 +105,13 @@
     (async () => {
       const mapEl = document.getElementById('map');
       try {
-        const { mapsKey } = await (await fetch('/api/config')).json();
-        if (!mapsKey) throw new Error('No key');
+        if (!GOOGLE_MAPS_API_KEY) throw new Error('No key');
         const s = document.createElement('script');
-        s.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(mapsKey) + '&callback=initMap';
+        s.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(GOOGLE_MAPS_API_KEY) + '&callback=initMap';
         s.async = true;
         document.head.appendChild(s);
       } catch {
-        mapEl.textContent = 'Map unavailable: add GOOGLE_MAPS_API_KEY to .env and run the server.';
+        mapEl.textContent = 'Map unavailable: add GOOGLE_MAPS_API_KEY to config.js.';
       }
     })();
   </script>
