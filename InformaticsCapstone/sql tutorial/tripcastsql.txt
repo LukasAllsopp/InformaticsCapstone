@@ -1,0 +1,37 @@
+-- TripCast database. Paste into phpMyAdmin's SQL tab and click Go.
+CREATE DATABASE IF NOT EXISTS tripcast CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE tripcast;
+
+CREATE TABLE users (
+  userId       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  firstName    VARCHAR(50)  NOT NULL,
+  lastName     VARCHAR(50)  NOT NULL,
+  email        VARCHAR(255) NOT NULL UNIQUE,
+  passwordHash VARCHAR(255) NOT NULL,          -- from PHP password_hash(), never the plain password
+  createdAt    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE destinations (
+  destinationId INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  userId        INT UNSIGNED NOT NULL,
+  locationName  VARCHAR(255) NOT NULL,
+  latitude      DECIMAL(9,6) NOT NULL,
+  longitude     DECIMAL(9,6) NOT NULL,
+  placeId       VARCHAR(255) NULL,             -- Google's place ID, so details can be looked up again
+  arrivalDate   DATE NULL,
+  departureDate DATE NULL,
+  FOREIGN KEY (userId) REFERENCES users(userId) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Weather goes stale, so each reading is saved with the time it was fetched.
+-- (Named weatherCondition because CONDITION is a reserved word in MySQL; map it to "condition" in the JSON.)
+CREATE TABLE weather_snapshots (
+  snapshotId       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  destinationId    INT UNSIGNED NOT NULL,
+  fetchedAt        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  temperature      DECIMAL(5,1) NULL,
+  weatherCondition VARCHAR(60)  NULL,
+  humidity         TINYINT UNSIGNED NULL,
+  windSpeed        DECIMAL(5,1) NULL,
+  FOREIGN KEY (destinationId) REFERENCES destinations(destinationId) ON DELETE CASCADE
+) ENGINE=InnoDB;
