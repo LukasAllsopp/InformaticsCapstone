@@ -6,15 +6,34 @@
   <title>History | TripCast</title>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    :root { --deep: #0d2b36; --sea: #1f6f8b; --sun: #f2b53a; --mist: #eaf3f2; }
+    :root { --deep: #0d2b36; --sea: #1f6f8b; --sun: #f2b53a; --mist: #eaf3f2; --muted: #567078; }
     * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; font-family: "Outfit", system-ui, sans-serif; color: var(--deep); background: var(--mist); }
-    .card { width: 100%; max-width: 480px; padding: 36px 32px; text-align: center; background: #fff; border-radius: 22px; border-top: 6px solid var(--sun); box-shadow: 0 24px 60px -20px rgba(13,43,54,.45); }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: start center; padding: 32px 16px; font-family: "Outfit", system-ui, sans-serif; color: var(--deep); background: var(--mist); }
+    .card { width: 100%; max-width: 480px; margin-top: 12vh; padding: 36px 32px; text-align: center; background: #fff; border-radius: 22px; border-top: 6px solid var(--sun); box-shadow: 0 24px 60px -20px rgba(13,43,54,.45); }
+    #history { max-width: 920px; margin-top: 0; text-align: left; }
     h1 { margin: 0 0 8px; font-family: "Fraunces", Georgia, serif; font-size: 1.9rem; }
     p { margin: 8px 0; }
     .btn { display: inline-block; margin-top: 16px; padding: 10px 22px; border-radius: 999px; background: var(--sea); color: #fff; text-decoration: none; font-weight: 500; }
     .btn:focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; }
     [hidden] { display: none; }
+
+    .top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; }
+    .top h1 { margin: 0; }
+    #who, .note { margin: 0; color: var(--muted); font-size: .9rem; }
+    .trip { margin: 20px 0; border: 1px solid #cfe1e2; border-radius: 14px; background: #f7fbfa; overflow: hidden; }
+    .trip-head { padding: 14px 18px; background: #fff; border-bottom: 1px solid #cfe1e2; }
+    .trip-head h2 { margin: 0; font-family: "Fraunces", Georgia, serif; font-size: 1.35rem; }
+    .trip-meta { margin: 2px 0 0; color: var(--muted); font-size: .85rem; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+    th, td { padding: 10px 18px; text-align: left; vertical-align: top; }
+    th { color: var(--muted); font-size: .75rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+    tbody tr { border-top: 1px solid #e0ecec; }
+    td.num { width: 1%; color: var(--sea); font-weight: 600; }
+    td.name { font-weight: 600; }
+    td.coord { font-variant-numeric: tabular-nums; white-space: nowrap; }
+    td.weather { color: var(--muted); }
+    .empty { padding: 24px; text-align: center; color: var(--muted); }
   </style>
 </head>
 <body>
@@ -31,9 +50,12 @@
 
   <!-- Real history page, shown only to logged-in users -->
   <div class="card" id="history" hidden>
-    <h1>Your history</h1>
-    <p id="who"></p>
-    <p>Your past trips will appear here.</p>
+    <div class="top">
+      <h1>Your history</h1>
+      <p id="who"></p>
+    </div>
+    <p class="note">Location names are the ones you chose. Weather was recorded when each trip was saved.</p>
+    <div id="trips">Loading your trips…</div>
     <a class="btn" href="dashboard.html">Back to dashboard</a>
   </div>
 
@@ -52,6 +74,74 @@
       }, 1000);
     }
 
+    // Small helper: <tag class="cls">text</tag>
+    function el(tag, className, text) {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text !== undefined) node.textContent = text;
+      return node;
+    }
+
+    function weatherText(w) {
+      if (!w) return 'Not saved';
+      const parts = [];
+      if (w.temperature != null) parts.push(Math.round(w.temperature) + '°F');
+      if (w.condition) parts.push(w.condition);
+      if (w.humidity != null) parts.push(w.humidity + '% humidity');
+      if (w.windSpeed != null) parts.push('wind ' + w.windSpeed + ' mph');
+      return parts.join(', ') || 'Not saved';
+    }
+
+    // One trip: a header, then a table with a row per location, in the order you set.
+    function renderTrip(trip) {
+      const card = el('article', 'trip');
+
+      const head = el('div', 'trip-head');
+      head.appendChild(el('h2', '', trip.tripName));
+      const count = trip.destinations.length;
+      const saved = new Date(String(trip.createdAt).replace(' ', 'T'))
+        .toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+      head.appendChild(el('p', 'trip-meta', `${count} location${count === 1 ? '' : 's'} · Saved ${saved}`));
+      card.appendChild(head);
+
+      const wrap = el('div', 'table-wrap');
+      const table = el('table');
+      const headRow = el('tr');
+      ['#', 'Location', 'Latitude', 'Longitude', 'Weather when saved'].forEach((label) => headRow.appendChild(el('th', '', label)));
+      table.appendChild(el('thead')).appendChild(headRow);
+
+      const body = el('tbody');
+      trip.destinations.forEach((d, index) => {
+        const row = el('tr');
+        row.appendChild(el('td', 'num', String(index + 1)));
+        row.appendChild(el('td', 'name', d.locationName));
+        row.appendChild(el('td', 'coord', d.latitude.toFixed(6)));
+        row.appendChild(el('td', 'coord', d.longitude.toFixed(6)));
+        row.appendChild(el('td', 'weather', weatherText(d.weather)));
+        body.appendChild(row);
+      });
+      table.appendChild(body);
+      wrap.appendChild(table);
+      card.appendChild(wrap);
+      return card;
+    }
+
+    async function loadTrips() {
+      const box = document.getElementById('trips');
+      try {
+        const r = await fetch('api/trips.php?action=list', { credentials: 'same-origin' });
+        if (!r.ok) throw new Error('Could not load your trips.');
+        const { trips } = await r.json();
+        if (!trips.length) {
+          box.replaceChildren(el('p', 'empty', 'No saved trips yet. Add pins on the dashboard, name them, and click Save trip.'));
+          return;
+        }
+        box.replaceChildren(...trips.map(renderTrip));
+      } catch (error) {
+        box.replaceChildren(el('p', 'empty', error.message));
+      }
+    }
+
     (async () => {
       try {
         // Asks the server who is logged in. 401 means nobody.
@@ -60,6 +150,7 @@
         const user = await r.json();
         document.getElementById('who').textContent = 'Signed in as ' + user.firstName + ' ' + user.lastName;
         show('history');
+        loadTrips();
       } catch {
         redirectToDashboard();
       }

@@ -5,3 +5,8 @@ Open the MAMP start page (the WebStart button), then choose Tools → phpMyAdmin
 Open tripcastsql.txt, copy everything and paste it into the box. Click Go.
 
 In the left sidebar you should now see a tripcast database with three tables: users, destinations and weather_snapshots
+
+
+
+
+

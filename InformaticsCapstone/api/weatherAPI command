@@ -1,0 +1,4 @@
+.\.venv\Scripts\python.exe .\weatherapi.py --server
+
+Type this into console after
+cd'ing into InformaticsCapstone
